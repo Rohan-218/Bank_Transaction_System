@@ -51,6 +51,7 @@ ledgerSchema.pre('replaceOne', preventLedgerModification);
 // Delete protections
 ledgerSchema.pre('deleteOne', preventLedgerModification);
 ledgerSchema.pre('deleteMany', preventLedgerModification);
+ledgerSchema.pre('remove', preventLedgerModification);
 ledgerSchema.pre('findOneAndDelete', preventLedgerModification);
 ledgerSchema.pre('findOneAndRemove', preventLedgerModification);
 
