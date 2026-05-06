@@ -96,6 +96,67 @@ async function sendRegistrationEmail(userEmail, name) {
   await sendEmail(userEmail, subject, text, html);
 }
 
+async function sendTransactionEmail(userEmail, name, amount, toAccount) {
+  const subject = 'Transaction Alert: Funds Transferred';
+
+  const text = `Hi ${name},
+
+    A transaction has been completed successfully.
+
+    Amount: ${amount}
+    To Account: ${toAccount}
+
+    If you have any questions or need assistance, feel free to reply to this email. We're always here to help.
+
+    Best regards,
+    The Backend Ledger Team`;
+
+  const html = `
+    <div style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
+      <h2 style="color: #4CAF50;">Transaction Alert: Funds Transferred</h2>
+      <p>A transaction has been completed successfully.</p>
+      <p><strong>Amount:</strong> ${amount}</p>
+      <p><strong>To Account:</strong> ${toAccount}</p>
+      <p>If you have any questions or need assistance, feel free to reply to this email. We're always here to help.</p>
+      <p>Best regards,<br/>The Backend Ledger Team</p>
+    </div>
+  `;
+
+  await sendEmail(userEmail, subject, text, html);
+}
+
+async function sendTransactionFailureEmail(userEmail, name, amount, toAccount) {
+
+  const subject = 'Transaction Failed ❌';
+
+  const text = `Hi ${name},
+
+  Your transaction could not be completed.
+
+  Amount: ${amount}
+  To Account: ${toAccount}
+
+  No amount has been deducted. Please try again.
+
+  - Backend Ledger`;
+
+  const html = `
+    <div style="font-family: Arial, sans-serif; color: #333;">
+      <h3 style="color: #E53935;">Transaction Failed ❌</h3>
+      <p>Hi ${name},</p>
+      <p>Your transaction could not be completed.</p>
+      <p><strong>Amount:</strong> ${amount}</p>
+      <p><strong>To Account:</strong> ${toAccount}</p>
+      <p style="color: #2E7D32;">No amount has been deducted. Please try again.</p>
+      <p>- Backend Ledger</p>
+    </div>
+  `;
+
+  await sendEmail(userEmail, subject, text, html);
+}
+
 module.exports = {
-    sendRegistrationEmail
+    sendRegistrationEmail,
+    sendTransactionEmail,
+    sendTransactionFailureEmail
 };

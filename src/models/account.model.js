@@ -3,6 +3,7 @@ const ledgerModel = require("./ledger.model");
 
 
 const accountSchema = new mongose.Schema({
+
     user: {
         type:mongose.Schema.Types.ObjectId,
         ref:"user",
@@ -22,6 +23,7 @@ const accountSchema = new mongose.Schema({
         required: [true, "Currency is required for creating an account"],
         default: "INR"
     }
+    
 }, {
     timestamps: true
 })

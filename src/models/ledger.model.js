@@ -2,6 +2,7 @@ const mongoose = require('mongoose');
 
 
 const ledgerSchema = new mongoose.Schema({
+
     account: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'account',
@@ -30,6 +31,7 @@ const ledgerSchema = new mongoose.Schema({
         required: [true, 'Type is required for a ledger entry'],
         immutable: true
     }
+    
 })
 
 
@@ -37,10 +39,6 @@ function preventLedgerModification() {
     throw new Error('Ledger entries cannot be modified after creation');
 }
 
-
-function preventLedgerModification(next) {
-    next(new Error('Ledger entries cannot be modified after creation'));
-}
 
 // Update protections
 ledgerSchema.pre('findOneAndUpdate', preventLedgerModification);
@@ -56,11 +54,10 @@ ledgerSchema.pre('findOneAndDelete', preventLedgerModification);
 ledgerSchema.pre('findOneAndRemove', preventLedgerModification);
 
 // Save protection
-ledgerSchema.pre('save', function (next) {
+ledgerSchema.pre('save', function () {
     if (!this.isNew) {
-        return next(new Error('Ledger entries cannot be modified after creation'));
+        throw new Error('Ledger entries cannot be modified after creation');
     }
-    next();
 });
 
 // Bulk protection
