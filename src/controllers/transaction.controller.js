@@ -95,37 +95,53 @@ async function createTransactionController(req, res) {
      * 8. Mark transaction COMPLETED
      * 9. Commit MongoDB session
     */
-    const session = await mongoose.startSession();
-    session.startTransaction();
+    let transaction;
+    try {
+        const session = await mongoose.startSession();
+        session.startTransaction();
 
-    const transaction = new transactionModel({
-        fromAccount,
-        toAccount,
-        amount,
-        idempotencyKey,
-        status: "PENDING"
-    })
+        transaction = (await transactionModel.create([{
+            fromAccount,
+            toAccount,
+            amount,
+            idempotencyKey,
+            status: "PENDING"
+        }], { session }))[0];
 
-    const debitLedgerEntry = await ledgerModel.create([{
-        account: fromAccount,
-        amount,
-        transaction: transaction._id,
-        type: "DEBIT"
-    }], { session })
+        const debitLedgerEntry = await ledgerModel.create([{
+            account: fromAccount,
+            amount,
+            transaction: transaction._id,
+            type: "DEBIT"
+        }], { session })
 
-    const creditLedgerEntry = await ledgerModel.create([{
-        account: toAccount,
-        amount,
-        transaction: transaction._id,
-        type: "CREDIT"
-    }], { session })
+        await (() => {
+            return new Promise(resolve => setTimeout(resolve, 10000))  
+        })(); 
 
-    transaction.status = "COMPLETED";
-    await transaction.save({ session });
+        const creditLedgerEntry = await ledgerModel.create([{
+            account: toAccount,
+            amount,
+            transaction: transaction._id,
+            type: "CREDIT"
+        }], { session })
 
-    await session.commitTransaction();
-    session.endSession();
+        await transactionModel.findByIdAndUpdate(
+            {_id: transaction._id},
+            { status: "COMPLETED" },
+            { session }
+        );
 
+        await session.commitTransaction();
+        session.endSession();
+    } catch (error) {
+
+        return res.status(400).json({
+            message: "Transaction is pending due to an error during processing, please retry after some time",
+            error: error.message
+        });
+
+    }
     /**
      * 10. Send email notification
     */
@@ -177,37 +193,49 @@ async function createInitialFundsController(req, res) {
     });
     }
 
-    const session = await mongoose.startSession();
-    session.startTransaction();
+    let transaction;
+    try {
+        const session = await mongoose.startSession();
+        session.startTransaction();
 
-    const transaction = new transactionModel({
-        fromAccount: fromUserAccount._id,
-        toAccount: toUserAccount._id,
-        amount,
-        idempotencyKey,
-        status: "PENDING"
-    });
+        transaction = (await transactionModel.create([{
+            fromAccount: fromUserAccount._id,
+            toAccount: toUserAccount._id,
+            amount,
+            idempotencyKey,
+            status: "PENDING"
+        }], { session }))[0];
 
-    const [debitLedgerEntry] = await ledgerModel.create([{
-        account: fromUserAccount._id,
-        amount,
-        transaction: transaction._id,
-        type: "DEBIT"
-    }], { session });
+        const [debitLedgerEntry] = await ledgerModel.create([{
+            account: fromUserAccount._id,
+            amount,
+            transaction: transaction._id,
+            type: "DEBIT"
+        }], { session });
 
-    const [creditLedgerEntry] = await ledgerModel.create([{
-        account: toUserAccount._id,
-        amount,
-        transaction: transaction._id,
-        type: "CREDIT"
-    }], { session });
+        const [creditLedgerEntry] = await ledgerModel.create([{
+            account: toUserAccount._id,
+            amount,
+            transaction: transaction._id,
+            type: "CREDIT"
+        }], { session });
 
-    transaction.status = "COMPLETED";
-    await transaction.save({ session });
+        await transactionModel.findByIdAndUpdate(
+            {_id: transaction._id},
+            { status: "COMPLETED" },
+            { session }
+        );
 
-    await session.commitTransaction();
-    session.endSession();
+        await session.commitTransaction();
+        session.endSession();
+    } catch (error) {
 
+        return res.status(400).json({
+            message: "Transaction is pending due to an error during processing, please retry after some time",
+            error: error.message
+        });
+    }
+    
     return res.status(201).json({
         transaction,
         message: "Initial funds added successfully",
